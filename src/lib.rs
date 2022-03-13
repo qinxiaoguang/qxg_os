@@ -21,6 +21,21 @@ pub fn init() {
     // 如果 没初始化中断， 即程序找不到中断处理 函数 ， 则会找二重中断，如果二重中断处理函数也没找到， 则找三重， 三重也没找到一般都只能重启。
     // 操作系统一般有二层中段和是层中断， 其实就是嵌套中断， 在中断程序运行的时候，该程序又导致新的中断， 就是嵌套中断。
     interrupts::init_idt();
+
+    // 初始化中段处理器,
+    unsafe { interrupts::PICS.lock().initialize() };
+
+    // 允许中断， 否则中断在cpu中是禁用的， 将会无法收到时钟中断，键盘等相关中断
+    // 需要与异常区别开来
+    // 开启后， 如果没配置时钟中断的处理函数， 将会导致二次中断异常等。
+    x86_64::instructions::interrupts::enable();
+}
+
+// hlt指令会让cpu休眠， 直到下次中断到来。
+pub fn hlt_loop() -> ! {
+    loop {
+        x86_64::instructions::hlt();
+    }
 }
 
 // #[test_case] 会自动实现该trait, 在执行cargo test的时候，自动执行对应的测试实例
@@ -71,9 +86,11 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
 #[cfg(test)]
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
+    use x86_64::instructions::hlt;
+
     init();
     test_main();
-    loop {}
+    hlt_loop();
 }
 
 #[cfg(test)]
@@ -86,7 +103,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    hlt_loop();
 }
 
 #[test_case]

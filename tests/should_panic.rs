@@ -5,7 +5,7 @@
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
-use qxg_os::{exit_qemu, serial_println, QemuExitCode};
+use qxg_os::{exit_qemu, hlt_loop, serial_println, QemuExitCode};
 
 use qxg_os::serial_print;
 
@@ -14,7 +14,7 @@ pub extern "C" fn _start() -> ! {
     should_fail();
     serial_println!("[test did not panic]");
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    hlt_loop();
 }
 
 pub fn test_runner(tests: &[&dyn Fn()]) {
@@ -36,5 +36,5 @@ fn should_fail() {
 fn panic(_info: &PanicInfo) -> ! {
     serial_println!("[ok]");
     exit_qemu(QemuExitCode::Success);
-    loop {}
+    hlt_loop();
 }

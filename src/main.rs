@@ -13,8 +13,10 @@ use core::panic::PanicInfo;
 #[cfg(not(test))] // new attribute
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
+    use qxg_os::hlt_loop;
+
     println!("{}", info);
-    loop {}
+    hlt_loop();
 }
 
 // 测试的时候调用此函数处理panic
@@ -25,7 +27,7 @@ fn panic(info: &PanicInfo) -> ! {
     serial_println!("[failed]\n");
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    qxg_os::hlt_loop();
 }
 
 // no_mangle是禁止编译器为函数生成唯一名字
@@ -38,12 +40,19 @@ pub extern "C" fn _start() -> ! {
     // 测试中断， 在这添加breakpoint
     // x86_64::instructions::interrupts::int3(); // int3就是breakpoint中断
 
+    // 测试page fault
+    // 写入page错误
+    /*let ptr = 0xdeadbeaf as *mut u32;
+    unsafe {
+        *ptr = 42;
+    }*/
+
     // 不管是执行cargo test还是cargo run,入口函数都是这个
     // 为了能正确执行test,需要指定cargo test的入口函数是什么
     #[cfg(test)]
     test_main();
 
-    loop {}
+    qxg_os::hlt_loop();
 }
 
 // qemu退出码

@@ -13,7 +13,7 @@ use core::panic::PanicInfo;
 pub extern "C" fn _start() -> ! {
     test_main();
 
-    loop {}
+    hlt_loop();
 }
 
 #[panic_handler]
@@ -21,7 +21,7 @@ fn panic(info: &PanicInfo) -> ! {
     qxg_os::test_panic_handler(info)
 }
 
-use qxg_os::println;
+use qxg_os::{hlt_loop, println};
 
 #[test_case]
 fn test_println() {
