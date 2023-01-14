@@ -6,7 +6,7 @@ use x86_64::VirtAddr;
 
 pub const DOUBLE_FAULT_IST_INDEX: u16 = 0;
 
-// 当堆栈溢出导致页错误中断的时候， 会将中段栈帧信息推到堆栈中，但堆栈已满 ，就会重新引发二次错误， 同样的道理引发三次错误。
+// 当内核堆栈溢出导致页错误中断的时候，此时有一个异常指针被推入中断栈中， 导致第二次错误，同样的导致，依然会把相关指针推入栈中，导致第三次错误。
 // 而x86则是通过InterruptStackTable(ist)表来进行中段时的堆栈切换， 这样在发生堆栈溢出的时候， 中断的堆栈信息就可以推入一个实现准备好的堆栈中，就不会再引发二次中断错误了。
 // 而ist就是早期架构中tss中的一部分， 而在32位模式下的tss会保存进程的寄存器信息及硬件的上下文切换， 而在64位模式下， 则会保存特权栈表及ist.
 lazy_static! {
@@ -26,13 +26,11 @@ lazy_static! {
         };
         tss
     };
-}
 
-// gdt是一个全局描述符表， 即global descriptor table,
-// 只有在x85中有此表,该表可以存在在任何位置，但需要告诉cpu该表的内存地址
-// 用于存储分段信息，虽然在64位模式不再支持分段， 但该结构仍然存在， 处理内核和用户空间的tss加载
-// 分页已经是操作系统的标准实现， 所以一个操作系统即便没有分段也一定会有分页
-lazy_static! {
+    // gdt是一个全局描述符表， 即global descriptor table,
+    // 只有在x86中有此表,该表可以存在在任何位置，但需要告诉cpu该表的内存地址
+    // 用于存储分段信息，虽然在64位模式不再支持分段， 但该结构仍然存在， 处理内核和用户空间及tss加载
+    // 分页已经是操作系统的标准实现， 所以一个操作系统即便没有分段也一定会有分页
     static ref GDT: (GlobalDescriptorTable, Selectors) = {
         let mut gdt = GlobalDescriptorTable::new();
         let code_selector = gdt.add_entry(Descriptor::kernel_code_segment());

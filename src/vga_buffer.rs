@@ -75,6 +75,7 @@ impl Writer {
             // 只输出ascii字符
             match byte {
                 0x20..=0x7e | b'\n' => self.write_byte(byte),
+                //_ => self.write_byte(0xfe),
                 _ => self.write_byte(0xfe),
             }
         }

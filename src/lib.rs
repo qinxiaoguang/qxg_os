@@ -5,12 +5,20 @@
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)] // 使用x86处理中断的abi
+#![feature(alloc_error_handler)]
+#![feature(const_mut_refs)]
 
+pub mod allocator;
 pub mod gdt;
 pub mod interrupts;
+pub mod memory;
 pub mod serial;
 pub mod vga_buffer; // 中断处理
 
+extern crate alloc;
+
+#[cfg(test)]
+use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 use x86_64::structures::idt::InterruptDescriptorTable;
 
@@ -38,7 +46,7 @@ pub fn hlt_loop() -> ! {
     }
 }
 
-// #[test_case] 会自动实现该trait, 在执行cargo test的时候，自动执行对应的测试实例
+// 为test_case抽象的trait
 pub trait Testable {
     fn run(&self) -> ();
 }
@@ -82,6 +90,18 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
     }
 }
 
+#[cfg(test)]
+entry_point!(test_kernel_main);
+
+/// Entry point for `cargo test`
+#[cfg(test)]
+fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
+    init();
+    test_main();
+    hlt_loop();
+}
+
+/*
 // cargo test --lib的入口
 #[cfg(test)]
 #[no_mangle]
@@ -92,6 +112,7 @@ pub extern "C" fn _start() -> ! {
     test_main();
     hlt_loop();
 }
+*/
 
 #[cfg(test)]
 #[panic_handler]
@@ -110,4 +131,10 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 fn test_breakpoint_exception() {
     // invoke a breakpoint exception
     x86_64::instructions::interrupts::int3();
+}
+
+// 处理内存分配失败错误
+#[alloc_error_handler]
+fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
+    panic!("allocation error: {:?}", layout)
 }

@@ -1,4 +1,5 @@
 // in tests/basic_boot.rs
+// 每个文件都是独立的可执行程序
 
 #![no_std]
 #![no_main]
@@ -8,20 +9,12 @@
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
-
-#[no_mangle] // don't mangle the name of this function
-pub extern "C" fn _start() -> ! {
-    test_main();
-
-    hlt_loop();
-}
+use qxg_os::println;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     qxg_os::test_panic_handler(info)
 }
-
-use qxg_os::{hlt_loop, println};
 
 #[test_case]
 fn test_println() {

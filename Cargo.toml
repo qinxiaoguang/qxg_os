@@ -20,13 +20,15 @@ test-timeout = 300          # (in seconds)
 #panic = "abort"
 
 [dependencies]
-bootloader = "0.9.8"
+# 为了让内核支持物理内存到虚拟内存的地址映射，使用map_physical_memory,内核就可以直接访问物理地址，这样在进行页表翻译的时候用的上。
+bootloader = { version = "0.9.8", features = ["map_physical_memory"]}
 volatile = "0.2.6"
 spin = "0.5.2"
 x86_64 = "0.14.2"
 uart_16550 = "0.2.0"
 pic8259 = "0.10.1"
 pc-keyboard = "0.5.0"
+linked_list_allocator = "0.9.0"
 
 [dependencies.lazy_static]
 version = "1.0"
